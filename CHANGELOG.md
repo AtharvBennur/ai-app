@@ -48,7 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Notes
 - Firebase Storage and Cloud Functions are NOT used (free tier compliance)
 - File storage uses local file system mock (to be implemented in Phase 3)
-- AI integration uses Hugging Face only (OpenAI excluded per user request)
+- AI integration uses Groq only (OpenAI excluded per user request)
 
 ---
 
@@ -167,14 +167,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### Added
 
 **Backend - AI Service (`services/ai.ts`)**
-- Hugging Face API integration using Mistral-7B-Instruct model
+- Groq API integration using Llama 3.1 models
 - Grammar and spelling analysis
 - Clarity and readability analysis
 - Structure and organization analysis
 - Content quality evaluation
 - Overall feedback generation with actionable suggestions
 - Automatic scoring algorithm based on text metrics
-- Fallback to google/flan-t5-large if primary model fails
+- Fallback messaging ensures graceful degradation when Groq is unavailable
 
 **Backend - AI Routes (`routes/ai.ts`)**
 - `POST /api/ai/evaluate/:submissionId` - Trigger full AI evaluation

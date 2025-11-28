@@ -1,15 +1,23 @@
 /**
- * AI Service - Hugging Face Integration
+ * AI Service - Groq Integration
  * Provides text analysis for grammar, clarity, structure, and content evaluation
  */
 
-const HF_API_URL = 'https://api-inference.huggingface.co/models'
-const HF_API_KEY = process.env.HF_API_KEY
+const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions'
+const DEFAULT_MODEL = process.env.GROQ_MODEL || 'llama-3.1-70b-versatile'
+const GROQ_API_KEY = process.env.GROQ_API_KEY || process.env.HF_API_KEY
 
-interface HFResponse {
-  generated_text?: string
-  error?: string
-  [key: string]: unknown
+interface GroqChoiceMessage {
+  content?: string
+}
+
+interface GroqChoice {
+  message?: GroqChoiceMessage
+}
+
+interface GroqResponse {
+  choices?: GroqChoice[]
+  error?: { message?: string }
 }
 
 interface EvaluationResult {
@@ -25,37 +33,51 @@ interface EvaluationResult {
 }
 
 /**
- * Call Hugging Face Inference API
+ * Call Groq Chat Completions API
  */
-async function callHuggingFace(model: string, inputs: string, parameters?: Record<string, unknown>): Promise<HFResponse[]> {
-  if (!HF_API_KEY) {
-    throw new Error('HF_API_KEY is not configured')
+async function callGroq(prompt: string, options?: { maxTokens?: number; temperature?: number; systemPrompt?: string; model?: string }): Promise<string> {
+  if (!GROQ_API_KEY) {
+    throw new Error('GROQ_API_KEY is not configured')
   }
 
-  const response = await fetch(`${HF_API_URL}/${model}`, {
+  const response = await fetch(GROQ_API_URL, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${HF_API_KEY}`,
+      'Authorization': `Bearer ${GROQ_API_KEY}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      inputs,
-      parameters: {
-        max_new_tokens: 500,
-        temperature: 0.7,
-        return_full_text: false,
-        ...parameters,
-      },
+      model: options?.model || DEFAULT_MODEL,
+      max_tokens: options?.maxTokens ?? 900,
+      temperature: options?.temperature ?? 0.7,
+      messages: [
+        {
+          role: 'system',
+          content: options?.systemPrompt || 'You are an expert writing tutor providing concise, actionable feedback.',
+        },
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
     }),
   })
 
   if (!response.ok) {
     const error = await response.text()
-    console.error('HF API Error:', error)
-    throw new Error(`Hugging Face API error: ${response.status}`)
+    console.error('Groq API error:', error)
+    throw new Error(`Groq API error: ${response.status}`)
   }
 
-  return response.json() as Promise<HFResponse[]>
+  const data = (await response.json()) as GroqResponse
+  const generated = data?.choices?.[0]?.message?.content?.trim()
+
+  if (!generated) {
+    console.error('Groq API unexpected response:', JSON.stringify(data))
+    throw new Error('Groq API returned an empty response')
+  }
+
+  return generated
 }
 
 /**
@@ -63,29 +85,7 @@ async function callHuggingFace(model: string, inputs: string, parameters?: Recor
  */
 async function generateText(prompt: string): Promise<string> {
   try {
-    // Using Mistral-7B-Instruct - a good open-source instruction-following model
-    const result = await callHuggingFace(
-      'mistralai/Mistral-7B-Instruct-v0.2',
-      prompt,
-      { max_new_tokens: 800 }
-    )
-
-    if (Array.isArray(result) && result[0]?.generated_text) {
-      return result[0].generated_text.trim()
-    }
-
-    // Fallback to a smaller model if Mistral fails
-    const fallbackResult = await callHuggingFace(
-      'google/flan-t5-large',
-      prompt,
-      { max_new_tokens: 500 }
-    )
-
-    if (Array.isArray(fallbackResult) && fallbackResult[0]?.generated_text) {
-      return fallbackResult[0].generated_text.trim()
-    }
-
-    return 'Unable to generate analysis at this time.'
+    return await callGroq(prompt)
   } catch (error) {
     console.error('Text generation error:', error)
     throw error

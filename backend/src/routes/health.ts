@@ -27,7 +27,7 @@ router.get('/ready', (_req: Request, res: Response) => {
     status: 'ready',
     services: {
       firebase: process.env.FIREBASE_PROJECT_ID ? 'configured' : 'not configured',
-      ai: process.env.HF_API_KEY ? 'configured' : 'not configured',
+      ai: process.env.GROQ_API_KEY || process.env.HF_API_KEY ? 'configured' : 'not configured',
     },
   })
 })
