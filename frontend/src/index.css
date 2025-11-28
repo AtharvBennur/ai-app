@@ -1,0 +1,55 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --app-gradient-start: #050816;
+  --app-gradient-mid: #0f172a;
+  --app-gradient-end: #1e1b4b;
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-bg: rgba(15, 23, 42, 0.6);
+}
+
+body {
+  @apply text-gray-100 antialiased;
+  min-height: 100vh;
+  background-color: var(--app-gradient-start);
+  background-image:
+    radial-gradient(circle at 20% 20%, rgba(59, 130, 246, 0.15), transparent 45%),
+    radial-gradient(circle at 80% 0%, rgba(99, 102, 241, 0.2), transparent 50%),
+    radial-gradient(circle at 50% 80%, rgba(14, 165, 233, 0.15), transparent 55%),
+    linear-gradient(135deg, var(--app-gradient-start), var(--app-gradient-mid), var(--app-gradient-end));
+}
+
+.glass-panel {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow:
+    0 8px 32px rgba(15, 23, 42, 0.35),
+    inset 0 0 1px rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(18px);
+}
+
+.grid-sheen {
+  position: relative;
+}
+
+.grid-sheen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(120deg, rgba(255, 255, 255, 0.05) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.grid-sheen:hover::after {
+  opacity: 1;
+}
+
+.text-gradient {
+  background: linear-gradient(90deg, #a5b4fc, #60a5fa, #34d399);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
