@@ -14,6 +14,15 @@ const npmCmd = isWindows ? 'npm.cmd' : 'npm';
 const forceInstall = process.argv.includes('--force-install');
 const spawnOpts = { shell: isWindows };
 
+// Ensure backend always falls back to port 5000 when one isn't provided.
+if (!process.env.PORT) {
+  process.env.PORT = '5000';
+}
+
+if (!process.env.HOST) {
+  process.env.HOST = '0.0.0.0';
+}
+
 const installDependencies = async (cwd, label) => {
   const hasNodeModules = existsSync(path.join(cwd, 'node_modules'));
 
