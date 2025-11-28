@@ -1,7 +1,8 @@
 /**
  * Simple orchestrator to install dependencies (if needed) and
  * start both backend (ts-node-dev) and frontend (Vite) with a single
- * `node server.js` command.
+ * `node server.js` command locally, while adapting automatically to
+ * production platforms like Render.
  */
 const { spawn } = require('child_process');
 const { existsSync } = require('fs');
@@ -13,6 +14,15 @@ const isWindows = process.platform === 'win32';
 const npmCmd = isWindows ? 'npm.cmd' : 'npm';
 const forceInstall = process.argv.includes('--force-install');
 const spawnOpts = { shell: isWindows };
+const isRender = process.env.RENDER === 'true';
+const isProduction =
+  isRender ||
+  process.env.NODE_ENV === 'production' ||
+  process.argv.includes('--production');
+const skipFrontend =
+  isProduction ||
+  process.env.SKIP_FRONTEND === 'true' ||
+  process.argv.includes('--backend-only');
 
 // Ensure backend always falls back to port 5000 when one isn't provided.
 if (!process.env.PORT) {
@@ -85,16 +95,37 @@ const gracefulShutdown = (processes) => {
 (async () => {
   try {
     await installDependencies(backendDir, 'backend');
-    await installDependencies(frontendDir, 'frontend');
+    if (!skipFrontend) {
+      await installDependencies(frontendDir, 'frontend');
+    } else {
+      console.log('ℹ Skipping frontend install/start (production/backend-only mode).');
+    }
+
+    if (isProduction) {
+      console.log('🏗 Building backend for production...');
+      await runCommand(npmCmd, ['run', 'build'], {
+        cwd: backendDir,
+        stdio: 'inherit',
+      });
+
+      console.log('🚀 Starting backend (production)...');
+      const backendProc = spawnBackground(npmCmd, ['run', 'start'], {
+        cwd: backendDir,
+      });
+      gracefulShutdown([backendProc]);
+      return;
+    }
 
     const backendProc = spawnBackground(npmCmd, ['run', 'dev:backend'], {
       cwd: backendDir,
     });
-    const frontendProc = spawnBackground(npmCmd, ['run', 'dev'], {
-      cwd: frontendDir,
-    });
+    const frontendProc = skipFrontend
+      ? null
+      : spawnBackground(npmCmd, ['run', 'dev'], {
+          cwd: frontendDir,
+        });
 
-    gracefulShutdown([backendProc, frontendProc]);
+    gracefulShutdown([backendProc, ...(frontendProc ? [frontendProc] : [])]);
   } catch (err) {
     console.error(err.message);
     process.exit(1);
