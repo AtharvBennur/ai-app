@@ -1,4 +1,4 @@
-import { Router, Request, Response, NextFunction } from 'express'
+import { Router, Request, Response, NextFunction, RequestHandler } from 'express'
 import multer from 'multer'
 import path from 'path'
 import fs from 'fs'
@@ -27,7 +27,7 @@ const storage = multer.diskStorage({
 })
 
 // File filter - allow common document types
-const fileFilter = (_req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+const fileFilter: Exclude<multer.Options['fileFilter'], undefined> = (_req, file, cb) => {
   const allowedMimeTypes = [
     'application/pdf',
     'application/msword',
@@ -53,6 +53,10 @@ const upload = multer({
   },
 })
 
+const singleFileUpload: RequestHandler = (req, res, next) => {
+  upload.single('file')(req, res, next)
+}
+
 // All routes require authentication
 router.use(authenticateToken)
 
@@ -61,7 +65,7 @@ router.use(authenticateToken)
  * @desc    Upload a file
  * @access  Private
  */
-router.post('/', upload.single('file'), (req: Request, res: Response) => {
+router.post('/', singleFileUpload, (req: Request, res: Response) => {
   try {
     if (!req.file) {
       return res.status(400).json({
