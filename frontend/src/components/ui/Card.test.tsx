@@ -10,28 +10,28 @@ describe('Card', () => {
 
   it('applies default padding', () => {
     render(<Card>Content</Card>)
-    const card = screen.getByText('Content').parentElement
-    expect(card?.className).toContain('p-6')
+    const card = screen.getByText('Content')
+    expect(card.className).toContain('p-6')
   })
 
   it('applies small padding when specified', () => {
     render(<Card padding="sm">Content</Card>)
-    const card = screen.getByText('Content').parentElement
-    expect(card?.className).toContain('p-4')
+    const card = screen.getByText('Content')
+    expect(card.className).toContain('p-4')
   })
 
   it('applies no padding when specified', () => {
     render(<Card padding="none">Content</Card>)
-    const card = screen.getByText('Content').parentElement
-    expect(card?.className).not.toContain('p-4')
-    expect(card?.className).not.toContain('p-6')
+    const card = screen.getByText('Content')
+    expect(card.className).not.toContain('p-4')
+    expect(card.className).not.toContain('p-6')
   })
 
   it('has shadow and rounded corners', () => {
     render(<Card>Content</Card>)
-    const card = screen.getByText('Content').parentElement
-    expect(card?.className).toContain('shadow')
-    expect(card?.className).toContain('rounded-lg')
+    const card = screen.getByText('Content')
+    expect(card.className).toContain('shadow')
+    expect(card.className).toContain('rounded-lg')
   })
 })
 
